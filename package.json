@@ -1,0 +1,16 @@
+{
+  "name": "clyde-command-center",
+  "version": "1.0.0",
+  "description": "Mission Control Dashboard for AI Workforce Management",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["ai", "dashboard", "command-center", "monitoring", "productivity"],
+  "author": "Clyde",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

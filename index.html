@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clyde Command Center</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            color: #e0e6ed;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .header {
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #2a2d3a;
+            padding: 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            color: #64ffda;
+            text-shadow: 0 0 20px rgba(100, 255, 218, 0.3);
+        }
+        
+        .header .status {
+            margin-top: 5px;
+            color: #90a4ae;
+            font-size: 14px;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .panel {
+            background: rgba(26, 26, 46, 0.7);
+            border: 1px solid #2a2d3a;
+            border-radius: 12px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        
+        .panel h2 {
+            color: #64ffda;
+            font-size: 16px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid #2a2d3a;
+            padding-bottom: 10px;
+        }
+        
+        .session-card {
+            background: rgba(22, 33, 62, 0.8);
+            border: 1px solid #34495e;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .session-card:hover {
+            border-color: #64ffda;
+            box-shadow: 0 0 20px rgba(100, 255, 218, 0.1);
+        }
+        
+        .session-title {
+            color: #fff;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .session-meta {
+            color: #90a4ae;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        
+        .progress-bar {
+            background: #2a2d3a;
+            border-radius: 10px;
+            height: 8px;
+            margin: 8px 0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #64ffda, #4fc3f7);
+            transition: width 0.3s ease;
+        }
+        
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #2a2d3a;
+        }
+        
+        .metric:last-child {
+            border-bottom: none;
+        }
+        
+        .metric-label {
+            color: #90a4ae;
+            font-size: 12px;
+        }
+        
+        .metric-value {
+            color: #fff;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .metric-value.success { color: #4caf50; }
+        .metric-value.warning { color: #ff9800; }
+        .metric-value.error { color: #f44336; }
+        
+        .task-item {
+            background: rgba(52, 73, 94, 0.5);
+            border-left: 3px solid #64ffda;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+        }
+        
+        .task-title {
+            color: #fff;
+            font-size: 13px;
+            font-weight: bold;
+        }
+        
+        .task-status {
+            color: #90a4ae;
+            font-size: 11px;
+            margin-top: 4px;
+        }
+        
+        .status-active { color: #4caf50; }
+        .status-waiting { color: #ff9800; }
+        .status-completed { color: #64ffda; }
+        
+        .heartbeat-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #4caf50;
+            animation: pulse 2s infinite;
+            display: inline-block;
+            margin-left: 10px;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(76, 175, 80, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
+        }
+        
+        .cost-graph {
+            height: 100px;
+            background: linear-gradient(180deg, transparent 0%, rgba(100, 255, 218, 0.1) 100%);
+            border: 1px solid #2a2d3a;
+            border-radius: 4px;
+            margin-top: 10px;
+            position: relative;
+        }
+        
+        .cost-graph::after {
+            content: '$0.31 today';
+            position: absolute;
+            bottom: 5px;
+            right: 10px;
+            color: #64ffda;
+            font-size: 11px;
+        }
+        
+        @media (max-width: 1200px) {
+            .dashboard { grid-template-columns: 1fr 1fr; }
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard { grid-template-columns: 1fr; }
+            .header h1 { font-size: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🤖 Clyde Command Center</h1>
+        <div class="status">
+            Active Session • Quiet Hours Mode • Build Priority
+            <span class="heartbeat-indicator"></span>
+        </div>
+    </div>
+
+    <div class="dashboard">
+        <!-- Session Monitoring -->
+        <div class="panel">
+            <h2>🔄 Active Sessions</h2>
+            
+            <div class="session-card">
+                <div class="session-title">agent:main:main</div>
+                <div class="session-meta">
+                    Model: claude-sonnet-4<br>
+                    Tokens: 97k/200k (49%)<br>
+                    Cost: $0.31 today<br>
+                    Age: 16h 42m
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 49%"></div>
+                </div>
+            </div>
+            
+            <div class="metric">
+                <span class="metric-label">Total Sessions</span>
+                <span class="metric-value">1</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Active Agents</span>
+                <span class="metric-value success">1</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Sub-agents Spawned</span>
+                <span class="metric-value">0</span>
+            </div>
+        </div>
+
+        <!-- Task Tracking -->
+        <div class="panel">
+            <h2>📋 Active Tasks</h2>
+            
+            <div class="task-item">
+                <div class="task-title">TASK-004: Command Center Interface</div>
+                <div class="task-status status-active">IN PROGRESS • Started 22:56 CST</div>
+            </div>
+            
+            <div class="task-item">
+                <div class="task-title">TASK-002: Brave API Configuration</div>
+                <div class="task-status status-completed">COMPLETED • Web search restored</div>
+            </div>
+            
+            <div class="task-item">
+                <div class="task-title">TASK-001: Memory Architecture</div>
+                <div class="task-status status-completed">COMPLETED • Boot sequence implemented</div>
+            </div>
+            
+            <div class="metric">
+                <span class="metric-label">Completed Today</span>
+                <span class="metric-value success">2</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">In Progress</span>
+                <span class="metric-value warning">1</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Blocked</span>
+                <span class="metric-value">1</span>
+            </div>
+        </div>
+
+        <!-- System Health -->
+        <div class="panel">
+            <h2>⚡ System Health</h2>
+            
+            <div class="metric">
+                <span class="metric-label">Gateway Status</span>
+                <span class="metric-value success">Running</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Telegram Bot</span>
+                <span class="metric-value success">Connected</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Web Search</span>
+                <span class="metric-value success">Brave API Active</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Heartbeat Interval</span>
+                <span class="metric-value">30 minutes</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Last Heartbeat</span>
+                <span class="metric-value">2 minutes ago</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Mode</span>
+                <span class="metric-value warning">Quiet Hours (BUILD)</span>
+            </div>
+        </div>
+
+        <!-- Cost Intelligence -->
+        <div class="panel">
+            <h2>💰 Cost Intelligence</h2>
+            
+            <div class="metric">
+                <span class="metric-label">Today's Spend</span>
+                <span class="metric-value">$0.31</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">This Week</span>
+                <span class="metric-value">$1.24</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Monthly Estimate</span>
+                <span class="metric-value warning">$9.50</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Cost per Task</span>
+                <span class="metric-value">$0.15</span>
+            </div>
+            
+            <div class="cost-graph"></div>
+        </div>
+
+        <!-- Recent Builds -->
+        <div class="panel">
+            <h2>🔧 Recent Builds</h2>
+            
+            <div class="task-item">
+                <div class="task-title">Command Center Interface</div>
+                <div class="task-status status-active">BUILDING NOW • Mission control dashboard</div>
+            </div>
+            
+            <div class="task-item">
+                <div class="task-title">Family Activity Finder</div>
+                <div class="task-status status-completed">DEPLOYED • GitHub + Vercel</div>
+            </div>
+            
+            <div class="task-item">
+                <div class="task-title">Crypto SMS Bot</div>
+                <div class="task-status">READY • Daily portfolio via text</div>
+            </div>
+            
+            <div class="task-item">
+                <div class="task-title">Pokemon Binder Pro</div>
+                <div class="task-status">READY • Collection manager for Soren</div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="panel">
+            <h2>⚡ Quick Actions</h2>
+            
+            <div style="display: grid; gap: 10px;">
+                <button style="background: #64ffda; color: #000; border: none; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer;">
+                    🚀 Deploy Next Build
+                </button>
+                <button style="background: #4fc3f7; color: #000; border: none; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer;">
+                    🔄 Spawn Sub-Agent
+                </button>
+                <button style="background: #2a2d3a; color: #fff; border: 1px solid #64ffda; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer;">
+                    📊 Generate Report
+                </button>
+                <button style="background: #2a2d3a; color: #fff; border: 1px solid #ff9800; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer;">
+                    🔧 System Status
+                </button>
+            </div>
+            
+            <div class="metric" style="margin-top: 15px;">
+                <span class="metric-label">Build Queue</span>
+                <span class="metric-value">3 pending</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Real-time updates simulation
+        setInterval(() => {
+            // Update heartbeat timestamp
+            const lastHeartbeat = document.querySelector('.metric-value');
+            if (lastHeartbeat && lastHeartbeat.textContent.includes('minutes ago')) {
+                const minutes = parseInt(lastHeartbeat.textContent) + 1;
+                lastHeartbeat.textContent = `${minutes} minutes ago`;
+            }
+            
+            // Simulate token usage growth
+            const tokenText = document.querySelector('.session-meta');
+            if (tokenText) {
+                const currentTokens = parseInt(tokenText.textContent.match(/(\d+)k/)[1]);
+                if (currentTokens < 120) {
+                    const newTokens = currentTokens + 1;
+                    const percentage = Math.round((newTokens / 200) * 100);
+                    tokenText.innerHTML = tokenText.innerHTML.replace(/\d+k\/200k \(\d+%\)/, `${newTokens}k/200k (${percentage}%)`);
+                    
+                    // Update progress bar
+                    const progressFill = document.querySelector('.progress-fill');
+                    progressFill.style.width = `${percentage}%`;
+                }
+            }
+        }, 30000); // Update every 30 seconds
+
+        // Button click handlers
+        document.querySelectorAll('button').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const originalText = e.target.textContent;
+                e.target.textContent = '⏳ Processing...';
+                e.target.disabled = true;
+                
+                setTimeout(() => {
+                    e.target.textContent = originalText;
+                    e.target.disabled = false;
+                }, 2000);
+            });
+        });
+    </script>
+</body>
+</html>
